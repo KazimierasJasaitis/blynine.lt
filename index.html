@@ -6,6 +6,11 @@
   <title>Netrukus bus atidaryta</title>
   <style>
     :root { color-scheme: dark; }
+    ::selection {
+      background: #f4f1ea;
+      color: #1a120c;
+      text-shadow: none;
+    }
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
     body {
@@ -21,6 +26,50 @@
       font-family: Georgia, "Times New Roman", serif;
       text-align: center;
     }
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+      background: #111;
+    }
+    .bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(17, 17, 17, 0.38);
+    }
+    .bg-track {
+      width: max(100%, calc(100vh * 646 / 1236));
+      width: max(100%, calc(100dvh * 646 / 1236));
+      margin-inline: auto;
+      display: flex;
+      flex-direction: column;
+      animation: bg-scroll 120s linear infinite;
+    }
+    .bg-track img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    @keyframes bg-scroll {
+      from { transform: translate3d(0, -50%, 0); }
+      to { transform: translate3d(0, 0, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .bg-track { animation: none; }
+    }
+    header, .embed {
+      position: relative;
+      z-index: 1;
+    }
+    header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.9rem;
+    }
     h1 {
       margin: 0;
       max-width: 16ch;
@@ -28,34 +77,64 @@
       font-weight: 700;
       line-height: 0.95;
       letter-spacing: -0.03em;
+      text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65);
+    }
+    header p {
+      margin: 0;
+      max-width: min(54rem, 92vw);
+      font-size: clamp(1.15rem, 2.6vw, 1.7rem);
+      font-weight: 400;
+      line-height: 1.35;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
     }
     .embed {
-      width: min(560px, 100%);
-      aspect-ratio: 560 / 384;
+      width: min(640px, 100%);
+      max-width: 100%;
+      min-width: 0;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
       background: #000;
+      container-type: inline-size;
+    }
+    .embed-scale {
+      width: 640px;
+      height: 480px;
+      transform-origin: top left;
+      transform: scale(calc(100cqw / 640px));
     }
     .embed iframe {
       display: block;
-      width: 100%;
-      height: 100%;
+      width: 640px;
+      height: 480px;
       border: 0;
     }
   </style>
 </head>
 <body>
-  <h1>Netrukus bus atidaryta</h1>
+  <div class="bg" aria-hidden="true">
+    <div class="bg-track">
+      <img src="/blynai-bg.png" alt="">
+      <img src="/blynai-bg.png" alt="">
+    </div>
+  </div>
+  <header>
+    <h1>Netrukus bus atidaryta</h1>
+    <p>o čia gali pažaisti papas pankeikerija (liet. Tėtušio blyninė)</p>
+  </header>
   <div class="embed">
-    <iframe
-      src="https://archive.org/embed/papaspancakeria_v2"
-      title="Papa's Pancakeria"
-      width="560"
-      height="384"
-      frameborder="0"
-      webkitallowfullscreen="true"
-      mozallowfullscreen="true"
-      allowfullscreen
-      allow="fullscreen"
-    ></iframe>
+    <div class="embed-scale">
+      <iframe
+        src="https://archive.org/embed/papaspancakeria_v2"
+        title="Papa's Pancakeria"
+        width="640"
+        height="480"
+        frameborder="0"
+        webkitallowfullscreen="true"
+        mozallowfullscreen="true"
+        allowfullscreen
+        allow="fullscreen"
+      ></iframe>
+    </div>
   </div>
 </body>
 </html>
