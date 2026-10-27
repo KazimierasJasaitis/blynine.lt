@@ -19,6 +19,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      justify-content: safe center;
       gap: 2.5rem;
       padding: 2.5rem 1rem 3rem;
       background: #111;
@@ -79,7 +80,7 @@
       letter-spacing: -0.03em;
       text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65);
     }
-    header p {
+    header p, .ask-label {
       margin: 0;
       max-width: min(54rem, 92vw);
       font-size: clamp(1.15rem, 2.6vw, 1.7rem);
@@ -87,6 +88,97 @@
       line-height: 1.35;
       text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
     }
+    .ask {
+      position: relative;
+      width: min(52rem, calc(100vw - 2rem));
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.7rem;
+      margin: 0.2rem 0 0.1rem;
+    }
+    .ask-label {
+      text-align: center;
+    }
+    .ask-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .ask-email {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.4rem;
+    }
+    .ask textarea,
+    .ask input[type="email"] {
+      flex: 1 1 0;
+      min-width: 0;
+      margin: 0;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid rgba(244, 241, 234, 0.45);
+      background: rgba(17, 17, 17, 0.72);
+      color: #f4f1ea;
+      font: inherit;
+      font-size: 1rem;
+      text-align: left;
+    }
+    .ask textarea {
+      resize: none;
+      height: 2.75rem;
+      min-height: 2.75rem;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.5rem;
+      line-height: 1.2;
+      overflow: hidden;
+    }
+    .ask input[type="email"] {
+      height: 2.75rem;
+    }
+    .news {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 0.4rem;
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.25;
+      text-align: left;
+      cursor: pointer;
+    }
+    .news input {
+      margin: 0.15rem 0 0;
+      flex: 0 0 auto;
+    }
+    .ask button {
+      flex: 0 0 auto;
+      align-self: flex-start;
+      height: 2.75rem;
+      margin: 0;
+      padding: 0.45em 1.15em;
+      border: 0;
+      background: #2f9e44;
+      color: #f4f1ea;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.05rem, 2.4vw, 1.35rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      line-height: 1;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .hp {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+    .ask[hidden],
+    .thanks[hidden] { display: none; }
     .stage {
       width: min(640px, 100%);
       max-width: 100%;
@@ -166,6 +258,22 @@
   </div>
   <header>
     <h1>Netrukus bus atidaryta</h1>
+    <form class="ask" action="/pateikti.php" method="post">
+      <label class="ask-label" for="pasiulymas">Kas turėtų būti blynine.lt?</label>
+      <div class="ask-row">
+        <textarea id="pasiulymas" name="pasiulymas" required maxlength="2000" rows="1"></textarea>
+        <div class="ask-email">
+          <input id="elpastas" type="email" name="elpastas" maxlength="200" placeholder="El. paštas (nebūtina)" autocomplete="email">
+          <label class="news" for="naujienos">
+            <input id="naujienos" type="checkbox" name="naujienos" value="1">
+            gauti blyninės naujienas
+          </label>
+        </div>
+        <button type="submit">Pateikti</button>
+      </div>
+      <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+    </form>
+    <p class="thanks" hidden>Ačiū.</p>
     <p>o čia gali pažaisti papas pankeikerija (liet. Tėtušio blyninė)</p>
   </header>
   <div class="stage">
@@ -198,6 +306,25 @@
     }
     document.querySelector(".cover").addEventListener("click", startGame);
     document.querySelector(".play").addEventListener("click", startGame);
+    var box = document.getElementById("pasiulymas");
+    function fitBox() {
+      box.style.height = "auto";
+      box.style.height = (box.scrollHeight + box.offsetHeight - box.clientHeight) + "px";
+    }
+    box.addEventListener("input", fitBox);
+    window.addEventListener("resize", fitBox);
+    var news = document.getElementById("naujienos");
+    var email = document.getElementById("elpastas");
+    function syncEmail() {
+      var on = news.checked;
+      email.required = on;
+      email.placeholder = on ? "El. paštas" : "El. paštas (nebūtina)";
+    }
+    news.addEventListener("change", syncEmail);
+    if (new URLSearchParams(location.search).get("pateikta") === "1") {
+      document.querySelector(".ask").hidden = true;
+      document.querySelector(".thanks").hidden = false;
+    }
   </script>
 </body>
 </html>
