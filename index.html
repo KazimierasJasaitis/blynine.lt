@@ -177,8 +177,32 @@
       height: 1px;
       opacity: 0;
     }
-    .ask[hidden],
-    .thanks[hidden] { display: none; }
+    .fail[hidden] { display: none; }
+    .fail a { color: inherit; }
+    .rise {
+      position: absolute;
+      z-index: 4;
+      margin: 0;
+      color: #f4f1ea;
+      font-size: clamp(1.2rem, 2.6vw, 1.7rem);
+      line-height: 1;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
+      pointer-events: none;
+      animation: thanks-rise 2.8s ease-out forwards;
+    }
+    @keyframes thanks-rise {
+      0% { opacity: 0; transform: translate(-50%, -110%); }
+      16% { opacity: 1; transform: translate(-50%, -170%); }
+      100% { opacity: 0; transform: translate(-50%, -340%); }
+    }
+    @keyframes thanks-fade {
+      0% { opacity: 0; transform: translate(-50%, -50%); }
+      20% { opacity: 1; transform: translate(-50%, -50%); }
+      100% { opacity: 0; transform: translate(-50%, -50%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rise { animation: thanks-fade 1.6s ease-out forwards; }
+    }
     .stage {
       width: min(640px, 100%);
       max-width: 100%;
@@ -271,9 +295,9 @@
         </div>
         <button type="submit">Pateikti</button>
       </div>
+      <p class="fail" hidden>Oi, parašyk <a href="mailto:kazys@pusedainos.lt">kazys@pusedainos.lt</a>, kad kažkas neveikia</p>
       <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
     </form>
-    <p class="thanks" hidden>Ačiū.</p>
     <p>o čia gali pažaisti papas pankeikerija (liet. Tėtušio blyninė)</p>
   </header>
   <div class="stage">
@@ -321,9 +345,50 @@
       email.placeholder = on ? "El. paštas" : "El. paštas (nebūtina)";
     }
     news.addEventListener("change", syncEmail);
-    if (new URLSearchParams(location.search).get("pateikta") === "1") {
-      document.querySelector(".ask").hidden = true;
-      document.querySelector(".thanks").hidden = false;
+    var form = document.querySelector(".ask");
+    var fail = form.querySelector(".fail");
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var button = form.querySelector("button[type=submit]");
+      if (button.disabled) return;
+      button.disabled = true;
+      fail.hidden = true;
+      fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        headers: { "Accept": "application/json" }
+      }).then(function (res) {
+        return res.json().then(function (body) {
+          if (!res.ok || !body || body.ok !== true) {
+            var err = new Error(body && body.error ? body.error : "save failed");
+            err.status = res.status;
+            throw err;
+          }
+          var kept = email.value;
+          box.value = "";
+          fitBox();
+          email.value = kept;
+          fail.hidden = true;
+          riseThanks(button);
+        });
+      }).catch(function (err) {
+        console.error(err);
+        fail.hidden = false;
+      }).then(function () {
+        button.disabled = false;
+      });
+    });
+    function riseThanks(anchor) {
+      var note = document.createElement("p");
+      note.className = "rise";
+      note.setAttribute("role", "status");
+      note.textContent = "Ačiū.";
+      form.appendChild(note);
+      var a = anchor.getBoundingClientRect();
+      var f = form.getBoundingClientRect();
+      note.style.left = (a.left - f.left + a.width / 2) + "px";
+      note.style.top = (a.top - f.top) + "px";
+      note.addEventListener("animationend", function () { note.remove(); });
     }
   </script>
 </body>

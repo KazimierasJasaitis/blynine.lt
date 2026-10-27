@@ -2,13 +2,11 @@
 declare(strict_types=1);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: /');
-    exit;
+    blynine_done(false, 'method');
 }
 
 if (trim((string) ($_POST['website'] ?? '')) !== '') {
-    header('Location: /?pateikta=1');
-    exit;
+    blynine_done(true);
 }
 
 $suggestion = trim((string) ($_POST['pasiulymas'] ?? ''));
@@ -16,26 +14,22 @@ $email = trim((string) ($_POST['elpastas'] ?? ''));
 $news = isset($_POST['naujienos']);
 
 if ($suggestion === '' || mb_strlen($suggestion) > 2000 || mb_strlen($email) > 200) {
-    header('Location: /');
-    exit;
+    blynine_done(false, 'invalid');
 }
 
 if ($news && $email === '') {
-    header('Location: /');
-    exit;
+    blynine_done(false, 'email');
 }
 
 if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-    header('Location: /');
-    exit;
+    blynine_done(false, 'email');
 }
 
 $configPath = __DIR__ . '/env.local.php';
 $config = is_file($configPath) ? require $configPath : null;
 if (!is_array($config)) {
     error_log('blynine: env.local.php is missing.');
-    header('Location: /');
-    exit;
+    blynine_done(false, 'config');
 }
 
 try {
@@ -56,8 +50,7 @@ try {
     $stmt->execute([$suggestion, $email, $news ? 1 : 0]);
 } catch (Throwable $error) {
     error_log('blynine: suggestion was not saved.');
-    header('Location: /');
-    exit;
+    blynine_done(false, 'database');
 }
 
 if ($news) {
@@ -65,8 +58,24 @@ if ($news) {
     \Blynine\Sender\subscribe($email);
 }
 
-header('Location: /?pateikta=1');
-exit;
+blynine_done(true);
+
+function blynine_done(bool $ok, string $error = ''): void
+{
+    $accept = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+    if (str_contains($accept, 'application/json')) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code($ok ? 200 : 422);
+        $payload = ['ok' => $ok];
+        if (!$ok && $error !== '') {
+            $payload['error'] = $error;
+        }
+        echo json_encode($payload);
+        exit;
+    }
+    header('Location: ' . ($ok ? '/?pateikta=1' : '/'));
+    exit;
+}
 
 function blynine_db(array $config): PDO
 {
