@@ -1,8 +1,20 @@
-DirectoryIndex index.html
+DirectoryIndex index.php index.html
 Options -Indexes
 ErrorDocument 404 /404.html
 
-<FilesMatch "^(env\.local\.php|env\.example\.php)$">
+RedirectMatch 302 ^/index\.html$ /
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(?:\.git|\.agents|\.codex|\.local|game|lib|scripts|migrations|tests|dist)(?:/|$) - [F,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<FilesMatch "^env(?:\..*)?\.php$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

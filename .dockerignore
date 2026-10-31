@@ -1,0 +1,9 @@
+.git
+**/node_modules
+env.local.php
+.local
+dist
+zaidimas
+*.gif
+*.png
+*.webp

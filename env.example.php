@@ -12,6 +12,10 @@ return [
     'DB_NAME' => '',
     'DB_USER' => '',
     'DB_PASS' => '',
+    // Generate with: php scripts/create-admin.php
+    'APP_SECRET' => '', // At least 32 random characters.
+    'ADMIN_USERNAME' => '',
+    'ADMIN_PASSWORD_HASH' => '', // password_hash() output; never a plaintext password.
     'SENDER_API_TOKEN' => '',
     'SENDER_GROUP_IDS' => [], // ['your-group-id']
     'SENDER_TRIGGER_AUTOMATION' => true,

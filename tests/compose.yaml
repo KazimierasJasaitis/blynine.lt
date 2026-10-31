@@ -1,0 +1,35 @@
+name: blynine-website-test
+services:
+  database:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: blynine_test
+      MYSQL_USER: blynine_test
+      MYSQL_PASSWORD: local-test-only
+      MYSQL_ROOT_PASSWORD: local-test-root
+    ports:
+      - "127.0.0.1:33079:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-plocal-test-root"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - database:/var/lib/mysql
+  web:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile
+    ports:
+      - "127.0.0.1:8087:80"
+    environment:
+      BLYNINE_CONFIG: /var/www/html/tests/config.php
+      BLYNINE_TEST_DB_HOST: database
+      BLYNINE_TEST_DB_PORT: 3306
+    volumes:
+      - ../:/var/www/html:ro
+    depends_on:
+      database:
+        condition: service_healthy
+volumes:
+  database:
