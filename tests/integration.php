@@ -6,7 +6,7 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 putenv('BLYNINE_CONFIG=' . __DIR__ . '/config.php');
-require dirname(__DIR__) . '/lib/app.php';
+require (getenv('BLYNINE_TEST_APP_ROOT') ?: dirname(__DIR__)) . '/lib/app.php';
 
 $config = \Blynine\app_config();
 if ($config['DB_NAME'] !== 'blynine_test' || $config['DB_USER'] !== 'blynine_test') {

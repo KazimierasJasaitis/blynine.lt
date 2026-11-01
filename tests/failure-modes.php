@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 if (PHP_SAPI !== 'cli') exit(1);
-$root = dirname(__DIR__);
+$root = getenv('BLYNINE_TEST_APP_ROOT') ?: dirname(__DIR__);
 $temporary = sys_get_temp_dir() . '/blynine-regression-' . bin2hex(random_bytes(6));
 mkdir($temporary, 0700);
 $fixture = require __DIR__ . '/config.php';

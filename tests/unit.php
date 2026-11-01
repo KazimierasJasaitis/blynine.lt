@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/lib/experiences.php';
+require_once (getenv('BLYNINE_TEST_APP_ROOT') ?: dirname(__DIR__)) . '/lib/experiences.php';
 
 $items = \Blynine\experiences();
 if (count($items) !== 3) {

@@ -27,17 +27,17 @@ jobs:
         run: |
           npm --prefix game ci
           npm --prefix game run build
+      - name: Prepare runtime files
+        run: python3 scripts/package.py --directory dist/hostinger
       - name: Verify PHP and automatic database setup
         run: |
           docker compose -f tests/compose.yaml up -d --build --wait
-          docker compose -f tests/compose.yaml exec -T web php tests/unit.php
-          docker compose -f tests/compose.yaml exec -T web php tests/bootstrap.php
-          docker compose -f tests/compose.yaml exec -T web php tests/auto-setup.php
-          docker compose -f tests/compose.yaml exec -T web php tests/integration.php
-          docker compose -f tests/compose.yaml exec -T web php tests/failure-modes.php
+          docker compose -f tests/compose.yaml exec -T web php /tests/unit.php
+          docker compose -f tests/compose.yaml exec -T web php /tests/bootstrap.php
+          docker compose -f tests/compose.yaml exec -T web php /tests/auto-setup.php
+          docker compose -f tests/compose.yaml exec -T web php /tests/integration.php
+          docker compose -f tests/compose.yaml exec -T web php /tests/failure-modes.php
           python3 tests/deployment.py
-      - name: Prepare runtime files
-        run: python3 scripts/package.py --directory dist/hostinger
       - name: Publish Hostinger branch
         run: python3 scripts/publish-deploy.py --directory dist/hostinger
       - name: Stop isolated test services

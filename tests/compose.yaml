@@ -23,11 +23,13 @@ services:
     ports:
       - "127.0.0.1:8087:80"
     environment:
-      BLYNINE_CONFIG: /var/www/html/tests/config.env
       BLYNINE_TEST_DB_HOST: database
       BLYNINE_TEST_DB_PORT: 3306
+      BLYNINE_TEST_APP_ROOT: /var/www/html
     volumes:
-      - ../:/var/www/html:ro
+      - ../dist/hostinger:/var/www/html:ro
+      - ../tests:/tests:ro
+      - ./config.env:/var/www/.env:ro
     depends_on:
       database:
         condition: service_healthy

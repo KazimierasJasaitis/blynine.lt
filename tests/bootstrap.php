@@ -7,7 +7,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 // Pure configuration regressions. No database connection or real environment file is used.
-$root = dirname(__DIR__);
+$root = getenv('BLYNINE_TEST_APP_ROOT') ?: dirname(__DIR__);
 require $root . '/lib/app.php';
 $temporary = sys_get_temp_dir() . '/blynine-bootstrap-' . bin2hex(random_bytes(6));
 mkdir($temporary, 0700);
@@ -39,6 +39,18 @@ $run = static function (string $code) use ($root, $environment, $temporary): mix
     return json_decode($output, true, 512, JSON_THROW_ON_ERROR);
 };
 try {
+    $fakeApp = $temporary . '/public_html';
+    mkdir($fakeApp, 0700);
+    file_put_contents($fakeApp . '/env.local.php', '<?php return [];');
+    $check(\Blynine\default_config_path($fakeApp) === $fakeApp . '/env.local.php', 'legacy PHP configuration remains the fallback when no dotenv exists');
+    file_put_contents($temporary . '/.env', 'DB_NAME=outside_checkout');
+    $check(\Blynine\default_config_path($fakeApp) === $temporary . '/.env', 'dotenv one directory above the app is discovered outside the checkout');
+    file_put_contents($fakeApp . '/.env', 'DB_NAME=inside_checkout');
+    $check(\Blynine\default_config_path($fakeApp . '/') === $fakeApp . '/.env', 'application dotenv takes precedence over parent dotenv and legacy PHP configuration');
+    unlink($fakeApp . '/.env');
+    unlink($temporary . '/.env');
+    unlink($fakeApp . '/env.local.php');
+    rmdir($fakeApp);
     file_put_contents($environment, <<<'ENV'
 # Literal values must not be evaluated or interpolated.
 DB_NAME=unconnected_test
@@ -98,8 +110,9 @@ ENV
     $check($noSecret === true, 'missing private entropy cannot produce a shared default secret');
     echo $checks . " configuration checks passed.\n";
 } finally {
-    foreach (glob($temporary . '/*') as $path) {
-        unlink($path);
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($temporary, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
+    foreach ($iterator as $path) {
+        $path->isDir() ? rmdir($path->getPathname()) : unlink($path->getPathname());
     }
     rmdir($temporary);
 }
