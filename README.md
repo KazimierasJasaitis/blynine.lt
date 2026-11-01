@@ -19,10 +19,10 @@ Kiekvieną kartą – kita istorija. Pagrindinis puslapis kiekvieną kartą nepr
    ADMIN_PASSWORD="tavo ilgas unikalus slaptažodis"
    ```
 
-   `.env` turi būti svetainės šakniniame kataloge, šalia `index.php`. Administratoriaus slaptažodis turi būti bent 12 ženklų ir ne ilgesnis kaip 128 baitai. Kabutėse `$`, `#` ir `=` išsaugomi tiesiogiai; kintamieji ir komandos nevykdomi.
+   `.env` įkelk **vienu katalogu aukščiau už `public_html`**: pavyzdžiui, `domains/blynine.lt/.env`, kai svetainė yra `domains/blynine.lt/public_html`. Taip jis lieka už Git diegimo katalogo ir jo nereikia iš naujo kelti po atnaujinimų. Administratoriaus slaptažodis turi būti bent 12 ženklų ir ne ilgesnis kaip 128 baitai. Kabutėse `$`, `#` ir `=` išsaugomi tiesiogiai; kintamieji ir komandos nevykdomi.
 Atidarius žodyną pirmą kartą, lentelės ir 30 pradinių įrašų sukuriami automatiškai. Prisijungimas – `/admin/`, naudojant `.env` pasirinktus duomenis. **SQL importo, terminalo komandų, slaptažodžio maišo ar atskiro APP_SECRET generuoti nereikia.** Žaidimas diegimo šakoje jau sukurtas; Node.js serveryje nereikalingas.
 
-Jei serveryje jau yra senasis `env.local.php`, jis veiks, kol nėra `.env`. Naujas `.env` turi pirmenybę. Į `.env` perkelk norimus naudoti DB ir administratoriaus duomenis. Prieš pirminį prijungimą ar diegimo šakos keitimą išsaugok serverio konfigūracijos kopiją; patys konfigūracijos failai į Git ar leidinio archyvą niekada neįtraukiami.
+Palaikomas ir `.env` šalia `index.php`, tačiau automatiniam diegimui rekomenduojamas išorinis failas. Paieškos tvarka: serverio `BLYNINE_CONFIG` kelias → `.env` svetainės šaknyje → `.env` vienu katalogu aukščiau → senasis `env.local.php`. Į naują `.env` perkelk norimus naudoti DB ir administratoriaus duomenis. Konfigūracijos failai į Git ar leidinio archyvą neįtraukiami.
 
 ## Kas vyksta po kodo pakeitimo
 
@@ -48,17 +48,18 @@ GitHub procesas paruošia diegimo šaką; Hostinger ryšį reikia vieną kartą 
 
 ## Vietinė patikra
 
-Izoliuota Docker aplinka naudoja savo bandymų DB ir `.env` formato konfigūraciją. Ji nesijungia prie gyvos DB ir nenaudoja tikrojo `env.local.php`.
+Izoliuota Docker aplinka tikrina patį paruoštą leidinį su savo bandymų DB ir `.env` vienu katalogu aukščiau už svetainę. Tikrieji konfigūracijos failai į konteinerį nepatenka.
 
 ```sh
 npm --prefix game ci
 npm --prefix game run build
+python3 scripts/package.py --directory dist/hostinger
 docker compose -f tests/compose.yaml up -d --build --wait
-docker compose -f tests/compose.yaml exec -T web php tests/unit.php
-docker compose -f tests/compose.yaml exec -T web php tests/bootstrap.php
-docker compose -f tests/compose.yaml exec -T web php tests/auto-setup.php
-docker compose -f tests/compose.yaml exec -T web php tests/integration.php
-docker compose -f tests/compose.yaml exec -T web php tests/failure-modes.php
+docker compose -f tests/compose.yaml exec -T web php /tests/unit.php
+docker compose -f tests/compose.yaml exec -T web php /tests/bootstrap.php
+docker compose -f tests/compose.yaml exec -T web php /tests/auto-setup.php
+docker compose -f tests/compose.yaml exec -T web php /tests/integration.php
+docker compose -f tests/compose.yaml exec -T web php /tests/failure-modes.php
 python3 tests/deployment.py
 ```
 

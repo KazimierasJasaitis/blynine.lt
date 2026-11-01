@@ -60,6 +60,21 @@ function load_dotenv_file(string $path): array
     return $config;
 }
 
+/** Keep private configuration outside a checkout when the host replaces deployed files. */
+function default_config_path(string $appRoot): string
+{
+    $appRoot = rtrim($appRoot, '/');
+    $local = $appRoot . '/.env';
+    if (is_file($local)) {
+        return $local;
+    }
+    $parent = dirname($appRoot === '' ? '/' : $appRoot) . '/.env';
+    if (is_file($parent)) {
+        return $parent;
+    }
+    return $appRoot . '/env.local.php';
+}
+
 function app_config(): array
 {
     static $config;
@@ -70,7 +85,7 @@ function app_config(): array
     if (is_string($override) && $override !== '') {
         $path = $override;
     } else {
-        $path = is_file(dirname(__DIR__) . '/.env') ? dirname(__DIR__) . '/.env' : dirname(__DIR__) . '/env.local.php';
+        $path = default_config_path(dirname(__DIR__));
     }
     if (!str_starts_with($path, '/') || !is_file($path)) {
         throw new \RuntimeException('Server configuration is missing.');
