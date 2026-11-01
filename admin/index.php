@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/lib/app.php';
 
-use function Blynine\{admin_configured, admin_logged_in, admin_session_fingerprint, all_tags, app_config, csrf_token, db, e, entry_input, flash, post_string, rate_limit_allow, redirect, save_entry, start_session, take_flash, verify_csrf};
+use function Blynine\{admin_configured, admin_logged_in, admin_password_matches, admin_session_fingerprint, all_tags, app_config, csrf_token, db, e, entry_input, flash, post_string, rate_limit_allow, redirect, save_entry, start_session, take_flash, verify_csrf};
 
 header('Cache-Control: no-store, private');
 header('X-Frame-Options: DENY');
@@ -16,7 +16,7 @@ try {
     start_session();
     $available = admin_configured();
     if (!$available) {
-        $setupError = 'Administratoriaus prisijungimas dar nesukonfigūruotas. Serveryje nustatyk ADMIN_USERNAME, ADMIN_PASSWORD_HASH ir APP_SECRET.';
+        $setupError = 'Administratoriaus prisijungimas dar nesukonfigūruotas. Į .env failą įrašyk ADMIN_USERNAME ir bent 12 ženklų ADMIN_PASSWORD.';
     }
 } catch (Throwable $error) {
     error_log('blynine admin configuration: ' . get_class($error));
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $available) {
             $config = app_config();
             $username = post_string('username');
             $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
-            $correctPassword = password_verify($password, $config['ADMIN_PASSWORD_HASH']);
+            $correctPassword = admin_password_matches($password);
             if (!hash_equals($config['ADMIN_USERNAME'], $username) || !$correctPassword) {
                 rate_limit_allow('login', 5, 900);
                 flash('error', 'Neteisingas prisijungimo vardas arba slaptažodis.');

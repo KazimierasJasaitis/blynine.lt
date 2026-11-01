@@ -25,10 +25,11 @@ if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
     blynine_done(false, 'email');
 }
 
-$configPath = __DIR__ . '/env.local.php';
-$config = is_file($configPath) ? require $configPath : null;
-if (!is_array($config)) {
-    error_log('blynine: env.local.php is missing.');
+require_once __DIR__ . '/lib/app.php';
+try {
+    $config = \Blynine\app_config();
+} catch (Throwable $error) {
+    error_log('blynine: server configuration is missing or invalid.');
     blynine_done(false, 'config');
 }
 

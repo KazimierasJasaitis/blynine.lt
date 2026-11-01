@@ -8,6 +8,58 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
     exit;
 }
 
+/** A small literal dotenv reader: never evaluates shell syntax or expands variables. */
+function load_dotenv_file(string $path): array
+{
+    $contents = @file_get_contents($path);
+    if ($contents === false) {
+        throw new \RuntimeException('Environment configuration could not be read.');
+    }
+    $contents = preg_replace('/^\xEF\xBB\xBF/', '', $contents);
+    $config = [];
+    foreach (preg_split('/\r\n|\n|\r/', $contents) as $index => $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+        if (!preg_match('/^([A-Z][A-Z0-9_]*)\s*=\s*(.*)$/D', $line, $match) || isset($config[$match[1]])) {
+            throw new \RuntimeException('Invalid environment configuration on line ' . ($index + 1) . '.');
+        }
+        $key = $match[1];
+        $raw = $match[2];
+        $value = '';
+        if ($raw !== '' && ($raw[0] === '"' || $raw[0] === "'")) {
+            $quote = $raw[0];
+            $closed = false;
+            $length = strlen($raw);
+            for ($position = 1; $position < $length; $position++) {
+                $character = $raw[$position];
+                if ($character === '\\' && $position + 1 < $length
+                    && ($raw[$position + 1] === $quote || $raw[$position + 1] === '\\')) {
+                    $value .= $raw[++$position];
+                } elseif ($character === $quote) {
+                    $trailing = trim(substr($raw, $position + 1));
+                    if ($trailing !== '' && !str_starts_with($trailing, '#')) {
+                        throw new \RuntimeException('Invalid environment configuration on line ' . ($index + 1) . '.');
+                    }
+                    $closed = true;
+                    break;
+                } else {
+                    $value .= $character;
+                }
+            }
+            if (!$closed) {
+                throw new \RuntimeException('Unclosed environment value on line ' . ($index + 1) . '.');
+            }
+        } else {
+            // An unquoted # is a comment only at the start or following whitespace.
+            $value = str_starts_with($raw, '#') ? '' : trim((string) preg_replace('/\s+#.*$/', '', $raw));
+        }
+        $config[$key] = $value;
+    }
+    return $config;
+}
+
 function app_config(): array
 {
     static $config;
@@ -15,13 +67,57 @@ function app_config(): array
         return $config;
     }
     $override = getenv('BLYNINE_CONFIG');
-    $path = is_string($override) && $override !== '' ? $override : dirname(__DIR__) . '/env.local.php';
+    if (is_string($override) && $override !== '') {
+        $path = $override;
+    } else {
+        $path = is_file(dirname(__DIR__) . '/.env') ? dirname(__DIR__) . '/.env' : dirname(__DIR__) . '/env.local.php';
+    }
     if (!str_starts_with($path, '/') || !is_file($path)) {
         throw new \RuntimeException('Server configuration is missing.');
     }
-    $loaded = require $path;
+    $loaded = strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'php' ? require $path : load_dotenv_file($path);
     if (!is_array($loaded)) {
         throw new \RuntimeException('Server configuration is invalid.');
+    }
+    $loaded += ['DB_HOST' => 'localhost', 'DB_PORT' => 3306, 'ADMIN_USERNAME' => 'admin'];
+    if (is_string($loaded['ADMIN_USERNAME'])) {
+        $loaded['ADMIN_USERNAME'] = trim($loaded['ADMIN_USERNAME']);
+    }
+    if (isset($loaded['SENDER_GROUP_IDS']) && is_string($loaded['SENDER_GROUP_IDS'])) {
+        $loaded['SENDER_GROUP_IDS'] = array_values(array_unique(array_filter(
+            array_map('trim', explode(',', $loaded['SENDER_GROUP_IDS'])), static fn (string $id): bool => $id !== ''
+        )));
+    }
+    if (isset($loaded['SENDER_TRIGGER_AUTOMATION']) && is_string($loaded['SENDER_TRIGGER_AUTOMATION'])) {
+        $boolean = strtolower(trim($loaded['SENDER_TRIGGER_AUTOMATION']));
+        if (!in_array($boolean, ['true', 'false', '1', '0'], true)) {
+            throw new \RuntimeException('SENDER_TRIGGER_AUTOMATION must be true or false.');
+        }
+        $loaded['SENDER_TRIGGER_AUTOMATION'] = in_array($boolean, ['true', '1'], true);
+    }
+    $plain = $loaded['ADMIN_PASSWORD'] ?? '';
+    if (!is_string($plain) || ($plain !== '' && (mb_strlen($plain) < 12 || strlen($plain) > 128 || str_contains($plain, "\0")))) {
+        throw new \RuntimeException('ADMIN_PASSWORD must have at least 12 characters and at most 128 bytes.');
+    }
+    $hash = $loaded['ADMIN_PASSWORD_HASH'] ?? '';
+    $hashValid = is_string($hash) && (password_get_info($hash)['algoName'] ?? 'unknown') !== 'unknown';
+    $secret = $loaded['APP_SECRET'] ?? '';
+    if (!is_string($secret) || ($secret !== '' && strlen($secret) < 32)) {
+        throw new \RuntimeException('APP_SECRET must have at least 32 characters when supplied.');
+    }
+    if ($secret === '') {
+        $databasePassword = $loaded['DB_PASS'] ?? '';
+        if ($plain === '' && !$hashValid && (!is_string($databasePassword) || strlen($databasePassword) < 12)) {
+            throw new \RuntimeException('Private credentials are required to derive the application secret.');
+        }
+        // Stable private input avoids writable application files and a separate setup secret.
+        $material = json_encode([
+            $loaded['DB_HOST'] ?? '', $loaded['DB_PORT'] ?? 3306,
+            $loaded['DB_NAME'] ?? '', $loaded['DB_USER'] ?? '', $databasePassword,
+            $loaded['ADMIN_USERNAME'], $plain !== '' ? $plain : $hash,
+        ], JSON_THROW_ON_ERROR);
+        $loaded['APP_SECRET'] = hash_hkdf('sha256', $material, 32, 'blynine/app-secret/v1', 'blynine/private-config/v1');
+        $loaded['APP_SECRET'] = bin2hex($loaded['APP_SECRET']);
     }
     return $config = $loaded;
 }
@@ -47,15 +143,17 @@ function db(): \PDO
         || !is_int($port) || $port < 1 || $port > 65535) {
         throw new \RuntimeException('Database configuration is invalid.');
     }
-    $connection = new \PDO(
+    $pdo = new \PDO(
         "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
         $user,
         $password,
         [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_EMULATE_PREPARES => false,
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC]
     );
-    $connection->exec("SET time_zone = '+00:00'");
-    return $connection;
+    $pdo->exec("SET time_zone = '+00:00'");
+    require_once __DIR__ . '/bootstrap.php';
+    ensure_initialized($pdo);
+    return $connection = $pdo;
 }
 
 function e(mixed $value): string
@@ -281,17 +379,32 @@ function rate_limit_allow(string $scope, int $limit, int $seconds, bool $consume
 function admin_configured(): bool
 {
     $config = app_config();
+    $plain = $config['ADMIN_PASSWORD'] ?? '';
+    $hash = $config['ADMIN_PASSWORD_HASH'] ?? '';
+    $credentialValid = is_string($plain) && $plain !== '';
+    $credentialValid = $credentialValid || (is_string($hash) && (password_get_info($hash)['algoName'] ?? 'unknown') !== 'unknown');
     return is_string($config['ADMIN_USERNAME'] ?? null) && trim($config['ADMIN_USERNAME']) !== ''
-        && is_string($config['ADMIN_PASSWORD_HASH'] ?? null)
-        && (password_get_info($config['ADMIN_PASSWORD_HASH'])['algoName'] ?? 'unknown') !== 'unknown'
-        && is_string($config['APP_SECRET'] ?? null) && strlen($config['APP_SECRET']) >= 32;
+        && $credentialValid && is_string($config['APP_SECRET'] ?? null) && strlen($config['APP_SECRET']) >= 32;
+}
+
+function admin_password_matches(string $password): bool
+{
+    $config = app_config();
+    if (is_string($config['ADMIN_PASSWORD'] ?? null) && $config['ADMIN_PASSWORD'] !== '') {
+        // Both digests have equal length, so comparison timing does not reveal password length.
+        return hash_equals(hash_hmac('sha256', $config['ADMIN_PASSWORD'], $config['APP_SECRET']),
+            hash_hmac('sha256', $password, $config['APP_SECRET']));
+    }
+    return is_string($config['ADMIN_PASSWORD_HASH'] ?? null) && $config['ADMIN_PASSWORD_HASH'] !== ''
+        && password_verify($password, $config['ADMIN_PASSWORD_HASH']);
 }
 
 function admin_session_fingerprint(): string
 {
     $config = app_config();
-    return hash('sha256', (string) ($config['ADMIN_USERNAME'] ?? '') . "\0"
-        . (string) ($config['ADMIN_PASSWORD_HASH'] ?? '') . "\0" . (string) ($config['APP_SECRET'] ?? ''));
+    $credential = is_string($config['ADMIN_PASSWORD'] ?? null) && $config['ADMIN_PASSWORD'] !== ''
+        ? 'plain:' . $config['ADMIN_PASSWORD'] : 'hash:' . (string) ($config['ADMIN_PASSWORD_HASH'] ?? '');
+    return hash_hmac('sha256', (string) ($config['ADMIN_USERNAME'] ?? '') . "\0" . $credential, $config['APP_SECRET']);
 }
 
 function admin_logged_in(): bool

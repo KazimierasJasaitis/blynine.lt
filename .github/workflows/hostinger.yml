@@ -1,0 +1,45 @@
+name: Prepare Hostinger deployment
+
+on:
+  push:
+    branches: [codex/random-website, main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hostinger-deployment
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: game/package-lock.json
+      - name: Build Lithuanian game
+        run: |
+          npm --prefix game ci
+          npm --prefix game run build
+      - name: Verify PHP and automatic database setup
+        run: |
+          docker compose -f tests/compose.yaml up -d --build --wait
+          docker compose -f tests/compose.yaml exec -T web php tests/unit.php
+          docker compose -f tests/compose.yaml exec -T web php tests/bootstrap.php
+          docker compose -f tests/compose.yaml exec -T web php tests/auto-setup.php
+          docker compose -f tests/compose.yaml exec -T web php tests/integration.php
+          docker compose -f tests/compose.yaml exec -T web php tests/failure-modes.php
+          python3 tests/deployment.py
+      - name: Prepare runtime files
+        run: python3 scripts/package.py --directory dist/hostinger
+      - name: Publish Hostinger branch
+        run: python3 scripts/publish-deploy.py --directory dist/hostinger
+      - name: Stop isolated test services
+        if: always()
+        run: docker compose -f tests/compose.yaml down --volumes

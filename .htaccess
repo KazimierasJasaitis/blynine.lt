@@ -14,7 +14,7 @@ RedirectMatch 302 ^/index\.html$ /
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-<FilesMatch "^env(?:\..*)?\.php$">
+<FilesMatch "^(?:env(?:\..*)?\.php|\.env(?:\..*)?)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

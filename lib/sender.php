@@ -6,11 +6,8 @@ namespace Blynine\Sender;
 function subscribe(string $email): bool
 {
     try {
-        $configPath = dirname(__DIR__) . '/env.local.php';
-        $config = is_file($configPath) ? require $configPath : [];
-        if (!is_array($config)) {
-            return false;
-        }
+        require_once __DIR__ . '/app.php';
+        $config = \Blynine\app_config();
 
         $token = $config['SENDER_API_TOKEN'] ?? '';
         if (!is_string($token) || trim($token) === '' || preg_match('/[\r\n]/', $token)) {

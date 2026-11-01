@@ -152,7 +152,7 @@ try {
     for ($i = 0; $i < 5; ++$i) request('/admin/', ['csrf' => $loginToken, 'action' => 'login', 'username' => 'test-admin', 'password' => 'wrong']);
     request('/admin/', ['csrf' => $loginToken, 'action' => 'login', 'username' => 'test-admin', 'password' => 'test-password-only']);
     check(str_contains(request('/admin/')['body'], 'Per daug nesėkmingų'), 'login throttling blocks further attempts after five failures');
-    foreach (['/env.local.php', '/env.example.php', '/.git/config', '/lib/app.php', '/tests/config.php', '/scripts/migrate.php', '/migrations/001_dictionary.sql', '/game/package.json'] as $path) {
+    foreach (['/.env', '/.env.example', '/.env.backup', '/env.local.php', '/env.example.php', '/.git/config', '/lib/app.php', '/tests/config.php', '/scripts/migrate.php', '/migrations/001_dictionary.sql', '/game/package.json'] as $path) {
         check(request($path)['status'] === 403, 'Apache denies access to ' . $path);
     }
     $root = request('/');

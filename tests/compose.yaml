@@ -10,7 +10,7 @@ services:
     ports:
       - "127.0.0.1:33079:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-plocal-test-root"]
+      test: ["CMD", "mysql", "--protocol=TCP", "--host=127.0.0.1", "--user=blynine_test", "--password=local-test-only", "blynine_test", "--execute=SELECT 1"]
       interval: 3s
       timeout: 3s
       retries: 30
@@ -23,7 +23,7 @@ services:
     ports:
       - "127.0.0.1:8087:80"
     environment:
-      BLYNINE_CONFIG: /var/www/html/tests/config.php
+      BLYNINE_CONFIG: /var/www/html/tests/config.env
       BLYNINE_TEST_DB_HOST: database
       BLYNINE_TEST_DB_PORT: 3306
     volumes:

@@ -12,10 +12,11 @@ return [
     'DB_NAME' => '',
     'DB_USER' => '',
     'DB_PASS' => '',
-    // Generate with: php scripts/create-admin.php
-    'APP_SECRET' => '', // At least 32 random characters.
-    'ADMIN_USERNAME' => '',
-    'ADMIN_PASSWORD_HASH' => '', // password_hash() output; never a plaintext password.
+    // Legacy PHP configuration is still supported. New deployments can use .env.example.
+    'ADMIN_USERNAME' => 'admin',
+    'ADMIN_PASSWORD' => '', // At least 12 characters; leave blank when using a hash below.
+    'ADMIN_PASSWORD_HASH' => '', // Optional existing password_hash() output.
+    'APP_SECRET' => '', // Optional; otherwise derived automatically from private credentials.
     'SENDER_API_TOKEN' => '',
     'SENDER_GROUP_IDS' => [], // ['your-group-id']
     'SENDER_TRIGGER_AUTOMATION' => true,
