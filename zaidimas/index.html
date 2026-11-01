@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#17191c" />
+  <meta name="description" content="Keptuvė tavo. Gravitacija – irgi. Išversk blyną ir neleisk jam nukristi. Mažas lietuviškas žaidimas blyninėje." />
+  <title>Dar vieną blyną. · blyninė</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2317191c'/%3E%3Cpath d='M8 43h15m0-3q14 19 31-3' stroke='%23f5f2e9' stroke-width='5' fill='none'/%3E%3Cellipse cx='38' cy='23' rx='14' ry='4' fill='%23f25c2a'/%3E%3C/svg%3E" />
+  <script type="module" crossorigin src="/zaidimas/assets/index-BJXA1Dj4.js"></script>
+  <link rel="stylesheet" crossorigin href="/zaidimas/assets/index-DmdKHglV.css">
+</head>
+<body>
+  <div id="game-container" role="img" aria-label="Žaidimo laukas. Paliesk arba spausk tarpo klavišą, kad atsirastų blynas. Laikyk nuspaudęs ir atleisk, kad jį išverstum."></div>
+  <header class="app-header">
+    <a class="brand" href="/" target="_top" aria-label="blyninė – atsitiktinė svetainė">blyninė<span aria-hidden="true">.</span></a>
+    <button id="back-button" class="text-button hidden" type="button">← Meniu</button>
+    <div id="score-hud" class="score-hud hidden" aria-label="Taškai">
+      <span class="score-label">išvertimai</span>
+      <span id="score-value" class="score-value" aria-live="polite" aria-atomic="true">0</span>
+    </div>
+    <nav aria-label="Žaidimo nuorodos">
+      <button id="settings-button" class="text-button" type="button" aria-haspopup="dialog" disabled>Nustatymai</button>
+      <a class="another-site" href="/" target="_top">Kita blyninė ↗</a>
+    </nav>
+  </header>
+
+  <main id="menu-ui" class="menu-ui">
+    <div class="menu-copy">
+      <p class="eyebrow"><span></span> blynų vartymo skyrius</p>
+      <h1>Dar vieną<br><em>blyną.</em></h1>
+      <p class="intro">Keptuvė tavo. Gravitacija – irgi.<br>Išversk blyną ir neleisk jam nukristi.</p>
+      <div class="menu-actions">
+        <button id="play-button" class="action-button" type="button" disabled>Žaisti <span aria-hidden="true">↗</span></button>
+        <button id="tutorial-button" class="text-button tutorial-button" type="button" disabled>Kaip tai veikia? <span aria-hidden="true">→</span></button>
+      </div>
+      <p id="loading-status" class="loading-status" role="status">Kaitiname keptuvę…</p>
+    </div>
+    <div class="menu-art" aria-hidden="true">
+      <svg viewBox="0 0 520 470" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="orbit" d="M149 250C99 173 178 72 291 82C406 92 451 218 388 282" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 9"/>
+        <path d="m376 267 12 16 16-12" stroke="currentColor" stroke-width="1.5"/>
+        <g class="flying-pancake"><ellipse cx="285" cy="124" rx="85" ry="18" transform="rotate(-24 285 124)" fill="#f25c2a"/><path d="m216 156 16-5m13-4 8-3" stroke="#f5f2e9" stroke-width="2"/></g>
+        <g transform="rotate(-16 274 316)"><path d="M68 305h103" stroke="currentColor" stroke-width="15"/><path d="M165 296c16 44 54 59 104 59h63c31 0 66-21 80-59" stroke="currentColor" stroke-width="8"/><path d="M166 296h245" stroke="currentColor" stroke-width="2"/></g>
+        <path d="M202 424h140" stroke="currentColor" stroke-opacity=".25"/>
+        <text x="272" y="407" fill="currentColor" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" letter-spacing="3">180° = +1</text>
+      </svg>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p id="menu-footer">Laikyk. Atleisk. Pakartok.</p>
+    <p id="game-hint" class="hidden">Paliesk arba spausk <kbd>tarpą</kbd> · laikyk ir atleisk</p>
+    <a href="/keiksmazodziai/" target="_top">Nepavyko? Išsikeik ↗</a>
+  </footer>
+
+  <dialog id="tutorial-dialog" class="game-dialog" aria-labelledby="tutorial-heading">
+    <p class="eyebrow">trumpai ir aiškiai</p>
+    <h2 id="tutorial-heading">Keptuvės mokykla.</h2>
+    <p id="tutorial-text" class="tutorial-text"></p>
+    <button id="tutorial-ok" class="action-button" type="button">Supratau <span aria-hidden="true">→</span></button>
+  </dialog>
+
+  <dialog id="settings-dialog" class="game-dialog" aria-labelledby="settings-heading">
+    <div class="dialog-heading"><h2 id="settings-heading">Pagal skonį.</h2><button id="settings-close" class="close-button" type="button" aria-label="Uždaryti nustatymus">×</button></div>
+    <p class="dialog-intro">Tavo keptuvė, tavo taisyklės.</p>
+    <label class="setting-row"><span>Muzika<small>Šiek tiek ritmo virtuvėje</small></span><input id="setting-music" type="checkbox" checked /></label>
+    <label class="setting-row"><span>Garso efektai<small>Kad kiekvienas taškas skambėtų</small></span><input id="setting-fx" type="checkbox" checked /></label>
+    <label class="setting-row"><span>Vibracija<small>Jei tavo įrenginys ją palaiko</small></span><input id="setting-haptics" type="checkbox" checked /></label>
+    <button id="settings-done" class="action-button" type="button">Tinka <span aria-hidden="true">→</span></button>
+  </dialog>
+  <noscript><div class="noscript">Šiam žaidimui reikia „JavaScript“. Įjunk jį naršyklės nustatymuose ir perkrauk puslapį.</div></noscript>
+</body>
+</html>
