@@ -4,6 +4,8 @@ Kiekvieną kartą – kita istorija. Pagrindinis puslapis kiekvieną kartą nepr
 
 ## Paleidimas Hostinger: aplinkos failas ir tuščia DB
 
+**Vienkartinis Git prijungimas:** Hostinger → Websites → blynine.lt → Manage site → Advanced → Git → Connect with GitHub. Pasirink `KazimierasJasaitis/blynine.lt`, šaką **`codex/hostinger-deploy`**, katalogą `public_html` ir įjunk automatinį diegimą. [Oficiali Hostinger instrukcija](https://www.hostinger.com/support/1583302-how-to-deploy-a-git-repository-in-hostinger/). Pirmą diegimą užbaik prieš įkeldamas naują `.env`.
+
 1. **Sukurk tuščią MySQL duomenų bazę** ir naudotoją, turintį teises kurti bei keisti jos lenteles.
 2. **Serveryje įkelk `.env`** pagal `.env.example` šabloną. Įrašyk duomenų bazės prisijungimą ir pasirinktą administratoriaus slaptažodį:
 
@@ -18,8 +20,6 @@ Kiekvieną kartą – kita istorija. Pagrindinis puslapis kiekvieną kartą nepr
    ```
 
    `.env` turi būti svetainės šakniniame kataloge, šalia `index.php`. Administratoriaus slaptažodis turi būti bent 12 ženklų ir ne ilgesnis kaip 128 baitai. Kabutėse `$`, `#` ir `=` išsaugomi tiesiogiai; kintamieji ir komandos nevykdomi.
-3. **Vieną kartą prijunk Git diegimą:** Hostinger → Websites → blynine.lt → Manage site → Advanced → Git → Connect with GitHub. Pasirink `KazimierasJasaitis/blynine.lt`, šaką **`codex/hostinger-deploy`**, katalogą `public_html` ir įjunk automatinį diegimą. [Oficiali Hostinger instrukcija](https://www.hostinger.com/support/1583302-how-to-deploy-a-git-repository-in-hostinger/).
-
 Atidarius žodyną pirmą kartą, lentelės ir 30 pradinių įrašų sukuriami automatiškai. Prisijungimas – `/admin/`, naudojant `.env` pasirinktus duomenis. **SQL importo, terminalo komandų, slaptažodžio maišo ar atskiro APP_SECRET generuoti nereikia.** Žaidimas diegimo šakoje jau sukurtas; Node.js serveryje nereikalingas.
 
 Jei serveryje jau yra senasis `env.local.php`, jis veiks, kol nėra `.env`. Naujas `.env` turi pirmenybę. Į `.env` perkelk norimus naudoti DB ir administratoriaus duomenis. Prieš pirminį prijungimą ar diegimo šakos keitimą išsaugok serverio konfigūracijos kopiją; patys konfigūracijos failai į Git ar leidinio archyvą niekada neįtraukiami.
